@@ -27,7 +27,7 @@ public class CalculatorEval {
 	}
 
 	private boolean isEOF(int symbol) {
-		return symbol == -1 || symbol == '\n';
+		return symbol == -1 || symbol == '\n' || symbol == '\r';
 	}
 
 	private int Tern() throws IOException, ParseError {
@@ -54,12 +54,29 @@ public class CalculatorEval {
 		return cond != 0 ? thenPart : elsePart;
 	}
 
-//	private int Expr() throws IOException, ParseError {
-//	}
-//
-//	private int Expr2() throws IOException, ParseError {
-//
-//	}
+	private int Expr() throws IOException, ParseError {
+		int rv = Term();
+		return Expr2(rv);
+	}
+
+	private int Expr2(int value) throws IOException, ParseError {
+		if (isDigit(lookaheadToken) || lookaheadToken == '*'|| lookaheadToken == '/'
+				|| lookaheadToken == '(')
+			throw new ParseError();
+		if (lookaheadToken == ')' || isEOF(lookaheadToken))
+			return value;
+
+		int new_value;
+		if (lookaheadToken == '+') {
+			consume('+');
+			new_value = value + Term();
+		}
+		else { // lookaheadToken == '-'
+			consume('-');
+			new_value = value - Term();
+		}
+		return Expr2(new_value);
+	}
 
 	private int Term() throws IOException, ParseError {
 		int rv = Factor();
@@ -86,12 +103,12 @@ public class CalculatorEval {
 	}
 
 	private int Factor() throws IOException, ParseError {
-//		if (lookaheadToken == '(') {
-//			consume('(');
-//			int rv  = Expr();
-//			consume(')');
-//			return rv;
-//		}
+		if (lookaheadToken == '(') {
+			consume('(');
+			int rv  = Expr();
+			consume(')');
+			return rv;
+		}
 		return Integer.parseInt(Number());
 	}
 
@@ -115,7 +132,7 @@ public class CalculatorEval {
 	}
 
 	public int eval() throws IOException, ParseError {
-		int rv = Term();
+		int rv = Expr();
 		if (lookaheadToken != '\n' && lookaheadToken != -1)
 			throw new ParseError();
 		return rv;
